@@ -3,6 +3,7 @@
 #include "mecat2ref_aux.h"
 #include "../common/diff_gapalign.h"
 #include "../common/xdrop_gapalign.h"
+#include "stdio.h"
 
 #include <algorithm>
 using namespace std;
