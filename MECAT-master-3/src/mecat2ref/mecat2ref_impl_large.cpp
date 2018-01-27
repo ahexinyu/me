@@ -92,6 +92,7 @@ static int transnum_buchang(char *seqm,int *value,int *endn,int len_str,int read
             }
             eit=eit<<2;
             eit=eit+temp;
+            printf("this is eit%d in transnum_buchang ",&eit);
         }
         value[i]=eit;
     }//序列整体的质量值？？？
