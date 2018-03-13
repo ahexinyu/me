@@ -1,5 +1,4 @@
 #include "../common/fasta_reader.h"
-
 #include <fstream>
 #include <iostream>
 #include <sstream>

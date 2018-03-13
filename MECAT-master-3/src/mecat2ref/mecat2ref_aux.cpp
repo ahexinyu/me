@@ -150,7 +150,7 @@ bool extend_candidate(candidate_save& can,
 					  qstr, 
 					  tstr);
 	if (aligner->go(qstr.data(), read_start, read_len, tstr.data(), left_ref_size, tstr.size(), 1000)) {
-//Users/hexinyu/Desktop/MECAT-master-2/src/mecat2ref/mecat2ref_aux.cpp
+
 		TempResult& r = trv[ntr++];
 		r.read_id = read_name;
 		r.read_dir = can.chain;

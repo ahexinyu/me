@@ -63,7 +63,7 @@ print_m4_result(const int read_id,
 	{
 		qb = qsize - qend;
 		qe = qsize - qstart;
-	}
+	}//dir 方向
 	double ident = 0.0;
 	int n = strlen(qmap);
 	assert(n > 0);

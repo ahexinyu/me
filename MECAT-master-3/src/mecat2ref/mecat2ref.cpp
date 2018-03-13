@@ -1,4 +1,4 @@
-#include <assert.h>
+ #include <assert.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -215,7 +215,7 @@ int chang_fastqfile(const char *fastaq, const char *fenfolder)
                 if(kk>0)
                 {
                     onedata[read_len]='\0';
-                    fprintf(ot, "%d\t\%d\t%s\n", kk-1,read_len,onedata);
+                    fprintf(ot, "%d\t\%d\t%s\n", kk-1,read_len,onedata);//onedata是修改过后的序列
                     read_len=0;
                     kk++;
                 }
@@ -245,20 +245,78 @@ int chang_fastqfile(const char *fastaq, const char *fenfolder)
     free(oq);
     return (kk);
 
-}//计算read 的条数
-
+}//计算read 的条数，还有长度
+//自己加的一部分代码
+ int chang_ref_file(char *file，const char *fenfolder){
+    FILE *fp, *ot;
+    int kk = 0,read_len;
+    char read_name[1000], onedata[RM], buff1[1000], buff2[RM], *fq, tempstr[200], *oq,ch;
+    sprintf(tempstr, "%s/reference.fq", fenfolder);//将临时文件参数名字赋予tempstr
+    fp = fopen(fastaq, "r");
+    ot = fopen(tempstr, "w");
+    fq = (char *)malloc(100000000);
+    setvbuf(fp, fq, _IOFBF, 100000000);
+    oq = (char *)malloc(100000000);
+    setvbuf(ot, oq, _IOFBF, 100000000);
+    int num_read_items;
+    ch=getc(fp);
+    if(ch=='>')
+    {
+        kk=0;
+        for (; ch!=EOF; ch=getc(fp))
+        {
+            if(ch=='>')
+            {
+                num_read_items = fscanf(fp,"%[^\n]s",read_name);
+                assert(num_read_items = 1);
+                if(kk>0)
+                {
+                    onedata[read_len]='\0';
+                    fprintf(ot, "%d\t\%d\t%s\n", kk-1,read_len,onedata);//onedata是修改过后的序列
+                    read_len=0;
+                    kk++;
+                }
+                else
+                {
+                    kk++;
+                    read_len=0;
+                }
+            }
+            else if(ch!='\n'&&ch!='\r')onedata[read_len++]=ch;
+        }
+        onedata[read_len]='\0';
+        fprintf(ot, "%d\t\%d\t%s\n", kk-1,read_len,onedata);
+    }
+    else
+    {
+        fseek(fp, 0L, SEEK_SET);
+        while (fscanf(fp, "%[^\n]s", read_name) != EOF && fscanf(fp, "%s\n", onedata) != EOF && fscanf(fp, "%[^\n]s", buff1) != EOF && fscanf(fp, "%s\n", buff2) != EOF)
+        {
+            read_len=strlen(onedata);
+            fprintf(ot, "%d\t%d\t%s\n", ++kk,read_len,onedata);
+        }
+    }
+    fclose(fp);
+    fclose(ot);
+    free(fq);
+    free(oq);
+    return (kk);
+    
+}
+//以上是自己加的,修改reference的序列//
 int firsttask(int argc, char *argv[])
 {
 	meap_ref_options* options = (meap_ref_options*)malloc(sizeof(meap_ref_options));
 	int flag = param_read_t(argc, argv, options);
 	if (flag == -1) { print_usage(); exit(1); }//解析命令行
 	
-    int readcount = chang_fastqfile(options->reads, options->wrk_dir);
+    int readcount = chang_fastqfile(options->reads, options->wrk_dir);//将信息写入wrk_dir
+    int reference_count=chang_ref_file(options->refrence,options->wrk_dir);//自己加的
 	char kkkkk[1024];
     sprintf(kkkkk, "config.txt");//往config.txt里面写东西。
     FILE* fileout = fopen(kkkkk, "w");
     fprintf(fileout, "%s\n%s\n%s\n%s\n%d\t%d\n", options->wrk_dir, options->reference, options->reads, options->output, options->num_cores, readcount);
-    fclose(fileout);
+    fclose(fileout);//，临时文件名，信息都在config里面。reads文件，参考基因文件。比对结果。
 	int corenum = options->num_cores;
 	num_candidates = options->num_candidates;
 	num_output = options->num_output;
@@ -298,7 +356,7 @@ int get_chr_id(fastaindexinfo* chr_idx, const int num_chr, const long offset)
 }
 
 void
-filter_contained_results(TempResult** pptr, const int num_results, int* valid)
+filter_coresults(TempResult** pptr, const int num_results, int* valid)
 {
 	int i = 0, j;
 	int b1, e1, id1, b2, e2, id2;
@@ -470,7 +528,7 @@ int main(int argc, char *argv[])
     int  readcount;
     FILE *fid1, *fid2;
 
-    gettimeofd ay(&tpstart, NULL);
+    gettimeofday(&tpstart, NULL);
     corenum = firsttask(argc, argv);
     gettimeofday(&tpend, NULL);
     timeuse = 1000000 * (tpend.tv_sec - tpstart.tv_sec) + tpend.tv_usec - tpstart.tv_usec;
@@ -479,6 +537,7 @@ int main(int argc, char *argv[])
 	const char* read_results = NULL;
     read_results = fgets(saved, 150, fid1);
 	assert(read_results);
+    // printf();
     saved[strlen(saved) - 1] = '\0';//f1d1传递给saved
     read_results = fgets(fastafile, 150, fid1);
 	assert(read_results);//fid1传递给fastafile
@@ -488,13 +547,13 @@ int main(int argc, char *argv[])
     fastqfile[strlen(fastqfile) - 1] = '\0';
     read_results = fgets(outfile, 150, fid1);
 	assert(read_results);
-    outfile[strlen(outfile) - 1] = '\0';
+    outfile[strlen(outfile) - 1] = '\0';//检验fid 1是不是空的
     int num_read_items = fscanf(fid1, "%d %d\n", &corenum,&readcount);
 	assert(num_read_items == 2);
     fclose(fid1);
     filelength=get_file_size(fastafile);
     gettimeofday(&mapstart, NULL);
-	meap_ref_impl_large(num_candidates, num_output, tech);
+	meap_ref_impl_large(num_candidates, num_output, tech);//num_out是最好的 的比对输出数字，int 类型。
     gettimeofday(&mapend, NULL);
     timeuse = 1000000 * (mapend.tv_sec - mapstart.tv_sec) + mapend.tv_usec - mapstart.tv_usec;
     timeuse /= 1000000;

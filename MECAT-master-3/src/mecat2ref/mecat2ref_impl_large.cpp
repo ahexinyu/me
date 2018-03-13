@@ -1,4 +1,4 @@
-#include "mecat2ref_defs.h"
+ #include "mecat2ref_defs.h"
 #include "output.h"
 #include "mecat2ref_aux.h"
 #include "../common/diff_gapalign.h"
@@ -33,6 +33,13 @@ static float get_similarity（float similarity){
     
     similiarity=0.8
     return similarity;
+}//fasta文件
+static void  get_k_mer_number(char *fastafile,char *fastqfile){
+    char *fastqindex;
+    int number_count;//出现次数
+    
+    
+    
 }
 
 static long get_file_size(const char *path)
@@ -60,7 +67,7 @@ static unsigned short atcttrans(char c)
 }
 
 static long sumvalue_x(int *intarry,int count)
-{
+{//countin
     long i,sumval=0;
     for(i=0; i<count; i++)
     {
@@ -75,7 +82,7 @@ static int transnum_buchang(char *seqm,int *value,int *endn,int len_str,int read
 {
     int eit=0,temp;
     int i,j,start,num;
-    num=(len_str-readnum)/BC+1;
+    num=(len_str-readnum)/BC+1;//区域数
     *endn=(len_str-readnum)%BC;
     //if((len_str%readnum)>0)num=num+1;
     for(i=0; i<num; i++)
@@ -93,10 +100,10 @@ static int transnum_buchang(char *seqm,int *value,int *endn,int len_str,int read
             }
             eit=eit<<2;
             eit=eit+temp;
-            printf("this is eit%d in transnum_buchang ",&eit);
+          //  printf("this is eit%d in transnum_buchang ",&eit);
         }
         value[i]=eit;
-    }//序列整体的质量值？？？
+    }
     return(num);
 }
 
@@ -148,7 +155,6 @@ static void creat_ref_index(char *fastafile)
     long length,count,i,start, rsize = 0;
     FILE *fasta,*fastaindex;
     char *seq,ch,nameall[200];
-    //
     if(seed_len==14)indexcount=268435456;
     else if(seed_len==13)indexcount=67108864;
     else if(seed_len==12)indexcount=16777216;
@@ -165,7 +171,7 @@ static void creat_ref_index(char *fastafile)
     sprintf(nameall,"%s/chrindex.txt",workpath);//nameall里面存的工作路径
     fastaindex=fopen(nameall,"w");
     REFSEQ=(char *)malloc((length+1000)*sizeof(char));
-    seq=REFSEQ;
+    seq=REFSEQ;//REFSEQ 是char*指针
     for (ch=getc(fasta),count=0; ch!=EOF; ch=getc(fasta))
     {
         if(ch=='>')
@@ -184,17 +190,16 @@ static void creat_ref_index(char *fastafile)
             count=count+1;
 			++rsize;
         }
-    }
+    }//循环读取文件
     fclose(fasta);
 	fprintf(fastaindex, "%ld\n", rsize);
     fprintf(fastaindex,"%ld\t%s\n",count,"FileEnd");
     seq[count]='\0';
     fclose(fastaindex);
     seqcount=count;
-    printf("%ld\n",seqcount);
 //printf("Constructing look-up table...\n");
     countin=(int *)malloc((indexcount)*sizeof(int));
-    for(i=0; i<indexcount; i++)countin[i]=0;
+    for(i=0; i<indexcount; i++)countin[i]=0;//初始化
 
 // Count the number
     eit=0;
@@ -227,7 +232,7 @@ static void creat_ref_index(char *fastafile)
 
 
 //Max_index
-    sumcount=sumvalue_x(countin,indexcount);
+    sumcount=sumvalue_x(countin,indexcount);//indexcount是count 的数量，countin
     allloc=(long *)malloc(sumcount*sizeof(long));
     databaseindex=(long **)malloc((indexcount)*sizeof(long*));
 //allocate memory
@@ -342,11 +347,11 @@ static void reference_mapping(int threadint)
 	} else {
 		ERROR("TECH must be either %d or %d", TECH_PACBIO, TECH_NANOPORE);
 	}
-
+  
     fileid=1;
     while(fileid)
     {
-        pthread_mute  x_lock(&mutilock);
+        pthread_mutex_lock(&mutilock);
         localnum=runnumber;
         runnumber++;
         pthread_mutex_unlock(&mutilock);
@@ -953,21 +958,21 @@ int meap_ref_impl_large(int maxc, int noutput, int tech)
     float timeuse;
     fp=fopen("config.txt","r");
     assert(fscanf(fp,"%s\n%s\n%s\n%s\n%d %d\n",workpath,fastafile,fastqfile,tempstr,&corenum,&readall) == 6);
-    fclose(fp);
+    fclose(fp);//第一个文件是参考基因组的文件
     threadnum=corenum;
     //building reference index
     gettimeofday(&tpstart, NULL);
     seed_len=13;
-    creat_ref_index(fastafile);
+    creat_ref_index(fastafile);//
+    get_index_number(fastafile,fastqfile);//****
     gettimeofday(&tpend, NULL);
     timeuse = 1000000 * (tpend.tv_sec - tpstart.tv_sec) + tpend.tv_usec - tpstart.tv_usec;
     timeuse /= 1000000;
     fp = fopen("config.txt", "a");
     fprintf(fp, "The Building Reference Index Time: %f sec\n", timeuse);
     fclose(fp);
-
+    //从这个上面就是建立index的时间。是reference 建立index的时间。
     gettimeofday(&tpstart, NULL);
-
     savework=(char *)malloc((MAXSTR+RM)*sizeof(char));
     readinfo=(ReadFasta*)malloc((SVM+2)*sizeof(ReadFasta));
     thread=(pthread_t*)malloc(threadnum*sizeof(pthread_t));
